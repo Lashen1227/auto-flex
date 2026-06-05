@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const vehicleRoutes = require("./routes/vehicleRoutes");
+const userRoutes = require("./routes/userRoutes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 function createApp() {
@@ -36,6 +37,7 @@ function createApp() {
       routes: {
         health: "/health",
         vehicles: "/api/vehicles",
+        users: "/api/users",
         summary: "/api/vehicles/summary",
         categories: "/api/vehicles/categories",
       },
@@ -43,6 +45,7 @@ function createApp() {
   });
 
   app.use("/api/vehicles", vehicleRoutes);
+  app.use("/api/users", userRoutes);
   app.use(notFound);
   app.use(errorHandler);
 
