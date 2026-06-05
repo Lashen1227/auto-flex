@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { LogIn, LogOut, Zap } from "lucide-react";
+import type { ReactNode } from "react";
 
 export function Header() {
   const { isAuthenticated, username, signIn, signOut } = useAuth();
@@ -54,7 +55,7 @@ export function Header() {
   );
 }
 
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+function NavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link
       to={to}

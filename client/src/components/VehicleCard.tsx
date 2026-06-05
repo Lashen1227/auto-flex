@@ -10,7 +10,7 @@ const euro = new Intl.NumberFormat("de-DE", {
 });
 
 export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const meta = CATEGORY_META[vehicle.category];
+  const meta = CATEGORY_META[vehicle.category] ?? CATEGORY_META.default;
 
   return (
     <Link
@@ -79,9 +79,7 @@ function StatusPill({ status }: { status: Vehicle["status"] }) {
   } as const;
   const { label, color } = map[status];
   return (
-    <span
-      className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur"
-    >
+    <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur">
       <span
         className="h-1.5 w-1.5 rounded-full"
         style={{ background: color, boxShadow: `0 0 8px ${color}` }}
