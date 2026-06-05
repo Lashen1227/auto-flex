@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Outlet,
+  Link,
   createRootRoute,
   createRoute,
   createRouter,
-  Link,
+  useNavigate,
 } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { VehicleCard } from "@/components/VehicleCard";
@@ -12,11 +13,11 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import {
   CATEGORY_META,
-  normalizeVehicle,
   type Vehicle,
 } from "@/lib/vehicles";
 import {
   createVehicle,
+  fetchCategories,
   fetchSummary,
   fetchVehicle,
   fetchVehicles,
@@ -79,35 +80,50 @@ function RootLayout() {
 
 function HomePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [summary, setSummary] = useState<Awaited<ReturnType<typeof fetchSummary>>["data"] | null>(
-    null,
-  );
+  const [summary, setSummary] = useState<Awaited<ReturnType<typeof fetchSummary>>["data"] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    void fetchVehicles({ featured: true, limit: 4 })
-      .then((items) => {
-        if (active) setVehicles(items);
-      })
-      .catch(() => {
-        if (active) setVehicles([]);
-      });
+    const loadHome = async () => {
+      setLoading(true);
+      setError(null);
 
-    void fetchSummary()
-      .then((result) => {
-        if (active) setSummary(result.data);
-      })
-      .catch(() => {
-        if (active) setSummary(null);
-      });
+      try {
+        const [liveVehicles, liveSummary] = await Promise.all([
+          fetchVehicles({ limit: 4, sort: "-createdAt" }),
+          fetchSummary(),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setVehicles(liveVehicles);
+        setSummary(liveSummary.data);
+      } catch (loadError) {
+        if (!active) {
+          return;
+        }
+
+        setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard data");
+        setVehicles([]);
+        setSummary(null);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadHome();
 
     return () => {
       active = false;
     };
   }, []);
-
-  const featured = vehicles.length > 0 ? vehicles : defaultVehicles;
 
   return (
     <div className="space-y-12">
@@ -135,32 +151,34 @@ function HomePage() {
 
         <GlassCard tone="strong" className="space-y-5 p-6">
           <div className="text-sm uppercase tracking-[0.35em] text-white/50">Live stats</div>
-          {summary ? (
+          {loading ? (
+            <div className="space-y-3">
+              <div className="h-12 rounded-2xl bg-white/5" />
+              <div className="h-12 rounded-2xl bg-white/5" />
+              <div className="h-12 rounded-2xl bg-white/5" />
+            </div>
+          ) : error ? (
+            <div className="text-sm text-red-200">{error}</div>
+          ) : summary ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <Stat label="Vehicles" value={summary.totals.count} />
               <Stat
                 label="Avg price"
-                value={new Intl.NumberFormat("de-DE", {
-                  style: "currency",
-                  currency: "EUR",
-                  maximumFractionDigits: 0,
-                }).format(summary.totals.averagePrice)}
+                value={formatCurrency(summary.totals.averagePrice)}
               />
               <Stat label="Lowest" value={formatCurrency(summary.totals.minPrice)} />
               <Stat label="Highest" value={formatCurrency(summary.totals.maxPrice)} />
             </div>
-          ) : (
-            <div className="text-sm text-white/60">Loading live inventory stats...</div>
-          )}
+          ) : null}
         </GlassCard>
       </section>
 
       <section className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold">Featured vehicles</h2>
-            <p className="text-sm text-white/60">
-              Seed inventory coming from MongoDB, ready to expand with more models.
+          <h2 className="text-2xl font-semibold">Latest vehicles</h2>
+          <p className="text-sm text-white/60">
+              Live inventory coming directly from MongoDB.
             </p>
           </div>
           <Link className="text-sm text-[color:var(--electric)] hover:underline" to="/vehicles">
@@ -168,11 +186,18 @@ function HomePage() {
           </Link>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {featured.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
-          ))}
-        </div>
+        {vehicles.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-sm text-white/60">
+            No vehicles are stored in MongoDB yet. Add one from the admin page to
+            populate the cards here.
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {vehicles.map((vehicle) => (
+              <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -181,66 +206,164 @@ function HomePage() {
 function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("-createdAt");
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
 
-    void fetchVehicles({
-      search: search || undefined,
-      category: category || undefined,
-    })
-      .then((items) => {
-        if (active) setVehicles(items);
-      })
-      .catch(() => {
-        if (active) setVehicles([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const loadVehicles = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const items = await fetchVehicles({
+          search: search || undefined,
+          category: category || undefined,
+          status: status || undefined,
+          sort,
+        });
+
+        if (active) {
+          setVehicles(items);
+        }
+      } catch (loadError) {
+        if (active) {
+          setVehicles([]);
+          setError(loadError instanceof Error ? loadError.message : "Failed to load inventory");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadVehicles();
 
     return () => {
       active = false;
     };
-  }, [search, category]);
+  }, [search, category, status, sort]);
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold">Inventory</h1>
         <p className="text-white/65">
-          Filter the current stock and let the inventory grow with the business.
+          Search the current stock with a single query or a few quick filters.
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[1fr_220px]">
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search make, model, city, category..."
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35 focus:border-[color:var(--electric)]"
-        />
-        <select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none focus:border-[color:var(--electric)]"
-        >
-          <option value="">All categories</option>
-          {Object.entries(CATEGORY_META)
-            .filter(([key]) => key !== "default")
-            .map(([key, meta]) => (
-              <option key={key} value={key} className="bg-slate-900">
-                {meta.label}
-              </option>
-            ))}
-        </select>
-      </div>
+      <GlassCard className="space-y-4 p-5">
+        <div className="grid gap-3 lg:grid-cols-[1.6fr_0.7fr_0.7fr_0.7fr]">
+          <div className="space-y-2 lg:col-span-1">
+            <div className="text-sm text-white/60">Search</div>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search make, model, city..."
+              className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35 focus:border-[color:var(--electric)]"
+            />
+          </div>
+          <SelectField
+            label="Category"
+            value={category}
+            onChange={setCategory}
+            options={[
+              { label: "All categories", value: "" },
+              { label: "Electric cars", value: "electric-car" },
+              { label: "Cargo bikes", value: "cargo-bike" },
+            ]}
+          />
+          <SelectField
+            label="Status"
+            value={status}
+            onChange={setStatus}
+            options={[
+              { label: "All statuses", value: "" },
+              { label: "Available", value: "available" },
+              { label: "Reserved", value: "reserved" },
+              { label: "Sold", value: "sold" },
+            ]}
+          />
+          <SelectField
+            label="Sort"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { label: "Newest first", value: "-createdAt" },
+              { label: "Price low to high", value: "priceEUR" },
+              { label: "Price high to low", value: "-priceEUR" },
+              { label: "Year newest", value: "-year" },
+            ]}
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm text-white/55">
+            Showing the current inventory directly from MongoDB.
+          </div>
+          <Button
+            variant="outline"
+            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+            onClick={() => {
+              setSearch("");
+              setCategory("");
+              setStatus("");
+              setSort("-createdAt");
+            }}
+          >
+            Clear
+          </Button>
+        </div>
+      </GlassCard>
 
       {loading ? (
         <div className="text-sm text-white/60">Loading inventory...</div>
+      ) : error ? (
+        <div className="text-sm text-red-200">{error}</div>
+      ) : vehicles.length === 0 ? (
+        <GlassCard className="border border-dashed border-white/15 bg-white/5 p-8">
+          <div className="space-y-5 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5 text-3xl">
+              ✦
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold">
+                {search || category || status ? "No vehicles match your filters" : "Your inventory is empty"}
+              </h2>
+              <p className="mx-auto max-w-xl text-sm leading-6 text-white/65">
+                {search || category || status
+                  ? "Try clearing the filters or broadening your search to see vehicles already stored in MongoDB."
+                  : "Add the first vehicle in the admin screen and it will appear here as a live MongoDB-backed card."}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-3">
+              {(search || category || status) && (
+                <Button
+                  variant="outline"
+                  className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("");
+                    setStatus("");
+                    setSort("-createdAt");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
+              <Button asChild className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]">
+                <Link to="/admin">Add first vehicle</Link>
+              </Button>
+            </div>
+          </div>
+        </GlassCard>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {vehicles.map((vehicle) => (
@@ -312,9 +435,10 @@ function VehicleDetailPage() {
         <div className="text-sm uppercase tracking-[0.3em] text-white/45">Price</div>
         <div className="text-4xl font-semibold">{formatCurrency(vehicle.priceEUR)}</div>
         <div className="space-y-2 text-sm text-white/70">
-          <div>Status: {vehicle.status}</div>
+          <div>Status: {prettyStatus(vehicle.status)}</div>
           <div>Body style: {vehicle.bodyStyle || "n/a"}</div>
           <div>Condition: {vehicle.condition || "n/a"}</div>
+          <div>Fresh arrival: {vehicle.isNew ? "Yes" : "No"}</div>
         </div>
         <div className="space-y-3 border-t border-white/10 pt-4">
           <div className="text-sm uppercase tracking-[0.3em] text-white/45">Features</div>
@@ -335,102 +459,153 @@ function VehicleDetailPage() {
 }
 
 function AdminPage() {
-  const { isAuthenticated } = useAuth();
+  const auth = useAuth();
+  const navigate = useNavigate();
   const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState(vehicleFormDefaults);
 
-  if (!isAuthenticated) {
+  const categoryOptions = useMemo(
+    () => [
+      { label: "Electric car", value: "electric-car" },
+      { label: "Cargo bike", value: "cargo-bike" },
+    ],
+    [],
+  );
+
+  const statusOptions = useMemo(
+    () => [
+      { label: "Available", value: "available" },
+      { label: "Reserved", value: "reserved" },
+      { label: "Sold", value: "sold" },
+    ],
+    [],
+  );
+
+  if (!auth.isAuthenticated) {
     return (
       <GlassCard className="p-6">
         <h1 className="text-2xl font-semibold">Sign in to add inventory</h1>
         <p className="mt-2 text-white/70">
-          The admin route is available after signing in with the demo auth stub.
+          The admin route is available after signing in with Asgardeo.
         </p>
       </GlassCard>
     );
   }
+
+  const setField = <K extends keyof typeof vehicleFormDefaults>(key: K, value: (typeof vehicleFormDefaults)[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const parseList = (value: string) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
 
   return (
     <GlassCard className="space-y-5 p-6">
       <div>
         <h1 className="text-2xl font-semibold">Add vehicle</h1>
         <p className="text-white/70">
-          A lightweight form for creating new vehicle records in MongoDB.
+          A simple form for adding one clean inventory record at a time.
         </p>
       </div>
 
-      <VehicleForm
-        onCreated={(message) => {
-          setStatus(message);
+      <form
+        className="space-y-6"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setSubmitting(true);
+          setError(null);
+          setStatus(null);
+
+          try {
+            const idToken = await auth.getIdToken();
+            const created = await createVehicle(
+              {
+                ...form,
+                images: form.imageUrl
+                  ? [{ url: form.imageUrl, alt: `${form.make} ${form.model}`.trim() }]
+                  : [],
+                priceEUR: Number(form.priceEUR),
+                year: Number(form.year),
+                summary: form.summary || `${form.make} ${form.model}`.trim(),
+                featured: form.featured,
+                freshArrival: form.freshArrival,
+              },
+              idToken,
+            );
+
+            setStatus(`Created ${created.make} ${created.model} in MongoDB.`);
+            setForm(vehicleFormDefaults);
+            navigate({ to: "/vehicles" });
+          } catch (createError) {
+            setError(createError instanceof Error ? createError.message : "Failed to save vehicle");
+          } finally {
+            setSubmitting(false);
+          }
         }}
-      />
-      {status ? <div className="text-sm text-emerald-300">{status}</div> : null}
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <SelectField
+            label="Category"
+            value={form.category}
+            onChange={(value) => setField("category", value)}
+            options={categoryOptions}
+          />
+          <SelectField
+            label="Status"
+            value={form.status}
+            onChange={(value) => setField("status", value)}
+            options={statusOptions}
+          />
+          <Field label="Make" value={form.make} onChange={(value) => setField("make", value)} />
+          <Field label="Model" value={form.model} onChange={(value) => setField("model", value)} />
+          <Field label="Year" type="number" value={form.year} onChange={(value) => setField("year", value)} />
+          <Field label="Price EUR" type="number" value={form.priceEUR} onChange={(value) => setField("priceEUR", value)} />
+          <Field label="Location" value={form.location} onChange={(value) => setField("location", value)} />
+          <Field label="Image URL" value={form.imageUrl} onChange={(value) => setField("imageUrl", value)} />
+          <div className="md:col-span-2 xl:col-span-3">
+            <Field label="Summary" value={form.summary} onChange={(value) => setField("summary", value)} />
+          </div>
+          <div className="flex flex-wrap gap-4 md:col-span-2 xl:col-span-3">
+            <ToggleField
+              label="Featured"
+              checked={form.featured}
+              onChange={(checked) => setField("featured", checked)}
+            />
+            <ToggleField
+              label="Fresh arrival"
+              checked={form.freshArrival}
+              onChange={(checked) => setField("freshArrival", checked)}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]"
+          >
+            {submitting ? "Saving..." : "Save vehicle"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+            onClick={() => setForm(vehicleFormDefaults)}
+          >
+            Reset form
+          </Button>
+        </div>
+
+        {status ? <div className="text-sm text-emerald-300">{status}</div> : null}
+        {error ? <div className="text-sm text-red-200">{error}</div> : null}
+      </form>
     </GlassCard>
-  );
-}
-
-function VehicleForm({ onCreated }: { onCreated: (message: string) => void }) {
-  const [form, setForm] = useState({
-    category: "electric-car",
-    make: "",
-    model: "",
-    year: new Date().getFullYear(),
-    priceEUR: 0,
-    location: "Berlin",
-  });
-
-  return (
-    <form
-      className="grid gap-4 md:grid-cols-2"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        const created = await createVehicle({
-          ...form,
-          summary: `${form.make} ${form.model}`.trim(),
-          status: "available",
-          featured: false,
-          isNew: true,
-        });
-        onCreated(`Created ${created.make} ${created.model} (${created.id})`);
-      }}
-    >
-      <Field
-        label="Category"
-        value={form.category}
-        onChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
-      />
-      <Field
-        label="Make"
-        value={form.make}
-        onChange={(value) => setForm((prev) => ({ ...prev, make: value }))}
-      />
-      <Field
-        label="Model"
-        value={form.model}
-        onChange={(value) => setForm((prev) => ({ ...prev, model: value }))}
-      />
-      <Field
-        label="Location"
-        value={form.location}
-        onChange={(value) => setForm((prev) => ({ ...prev, location: value }))}
-      />
-      <Field
-        label="Year"
-        type="number"
-        value={String(form.year)}
-        onChange={(value) => setForm((prev) => ({ ...prev, year: Number(value) }))}
-      />
-      <Field
-        label="Price EUR"
-        type="number"
-        value={String(form.priceEUR)}
-        onChange={(value) => setForm((prev) => ({ ...prev, priceEUR: Number(value) }))}
-      />
-      <div className="md:col-span-2">
-        <Button className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]">
-          Save vehicle
-        </Button>
-      </div>
-    </form>
   );
 }
 
@@ -438,11 +613,13 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
   type = "text",
 }: {
   label: string;
-  value: string;
+  value: string | number;
   onChange: (value: string) => void;
+  placeholder?: string;
   type?: string;
 }) {
   return (
@@ -451,9 +628,60 @@ function Field({
       <input
         type={type}
         value={value}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none focus:border-[color:var(--electric)]"
       />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <label className="space-y-2">
+      <div className="text-sm text-white/60">{label}</div>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none focus:border-[color:var(--electric)]"
+      >
+        {options.map((option) => (
+          <option key={option.value || option.label} value={option.value} className="bg-slate-900">
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ToggleField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span className="text-sm text-white/70">{label}</span>
     </label>
   );
 }
@@ -483,29 +711,20 @@ function formatCurrency(value: number) {
   }).format(value || 0);
 }
 
-const defaultVehicles = [
-  normalizeVehicle({
-    id: "demo-1",
-    category: "electric-car",
-    make: "Tesla",
-    model: "Model Y",
-    year: 2025,
-    priceEUR: 49990,
-    status: "available",
-    location: "Berlin",
-    rangeKm: 533,
-    power: "378 kW",
-  }),
-  normalizeVehicle({
-    id: "demo-2",
-    category: "cargo-bike",
-    make: "UrbanRide",
-    model: "Cargo Longtail",
-    year: 2025,
-    priceEUR: 5290,
-    status: "available",
-    location: "Hamburg",
-    rangeKm: 110,
-    power: "250 W",
-  }),
-];
+function prettyStatus(status: string) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+const vehicleFormDefaults = {
+  category: "electric-car",
+  status: "available",
+  make: "",
+  model: "",
+  year: new Date().getFullYear(),
+  priceEUR: 0,
+  location: "Berlin",
+  imageUrl: "",
+  summary: "",
+  featured: true,
+  freshArrival: true,
+};

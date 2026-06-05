@@ -89,7 +89,11 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
   }
 
   if (body.isNew !== undefined) {
-    payload.isNew = parseMaybeBoolean(body.isNew);
+    payload.freshArrival = parseMaybeBoolean(body.isNew);
+  }
+
+  if (body.freshArrival !== undefined) {
+    payload.freshArrival = parseMaybeBoolean(body.freshArrival);
   }
 
   if (body.features !== undefined) {

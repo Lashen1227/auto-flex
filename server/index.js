@@ -8,7 +8,10 @@ const PORT = Number(process.env.PORT) || 8080;
 
 async function bootstrap() {
   await connectDB();
-  await seedVehiclesIfNeeded();
+
+  if (process.env.DEMO_SEED_VEHICLES === "true") {
+    await seedVehiclesIfNeeded();
+  }
 
   const app = createApp();
   app.listen(PORT, () => {

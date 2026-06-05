@@ -49,7 +49,7 @@ const vehicleSchema = new mongoose.Schema(
     images: [mediaSchema],
     dealer: { type: dealerSchema, default: () => ({}) },
     featured: { type: Boolean, default: false, index: true },
-    isNew: { type: Boolean, default: true },
+    freshArrival: { type: Boolean, default: true },
     stockNumber: { type: String, trim: true, default: "" },
     specs: { type: mongoose.Schema.Types.Mixed, default: {} },
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -65,6 +65,7 @@ vehicleSchema.set("toJSON", {
   transform: (_doc, ret) => {
     ret.id = ret._id.toString();
     ret.range = ret.rangeKm;
+    ret.isNew = ret.freshArrival;
     delete ret._id;
     return ret;
   },

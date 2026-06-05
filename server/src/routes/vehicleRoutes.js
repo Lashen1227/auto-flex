@@ -9,6 +9,7 @@ const {
   listCategories,
 } = require("../controllers/vehicleController");
 const { asyncHandler } = require("../middleware/asyncHandler");
+const { requireAsgardeoAuth } = require("../middleware/requireAsgardeoAuth");
 
 const router = express.Router();
 
@@ -16,8 +17,8 @@ router.get("/", asyncHandler(listVehicles));
 router.get("/summary", asyncHandler(getVehicleSummary));
 router.get("/categories", asyncHandler(listCategories));
 router.get("/:id", asyncHandler(getVehicleById));
-router.post("/", asyncHandler(createVehicle));
-router.patch("/:id", asyncHandler(updateVehicle));
-router.delete("/:id", asyncHandler(deleteVehicle));
+router.post("/", requireAsgardeoAuth, asyncHandler(createVehicle));
+router.patch("/:id", requireAsgardeoAuth, asyncHandler(updateVehicle));
+router.delete("/:id", requireAsgardeoAuth, asyncHandler(deleteVehicle));
 
 module.exports = router;

@@ -28,6 +28,7 @@ export interface Vehicle {
   images?: Array<{ url: string; alt?: string }>;
   featured?: boolean;
   isNew?: boolean;
+  freshArrival?: boolean;
   stockNumber?: string;
 }
 
@@ -55,7 +56,7 @@ export const CATEGORY_META: Record<
   },
 };
 
-export function normalizeVehicle(raw: Record<string, any>): Vehicle {
+export function normalizeVehicle(raw: Record<string, any> = {}): Vehicle {
   return {
     id: String(raw.id ?? raw._id ?? raw.slug ?? ""),
     slug: raw.slug,
@@ -81,7 +82,8 @@ export function normalizeVehicle(raw: Record<string, any>): Vehicle {
     features: Array.isArray(raw.features) ? raw.features : [],
     images: Array.isArray(raw.images) ? raw.images : [],
     featured: Boolean(raw.featured),
-    isNew: Boolean(raw.isNew),
+    isNew: Boolean(raw.isNew ?? raw.freshArrival),
+    freshArrival: Boolean(raw.freshArrival ?? raw.isNew),
     stockNumber: raw.stockNumber ?? "",
   };
 }

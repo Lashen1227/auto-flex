@@ -30,7 +30,7 @@ const seedVehicles = [
     ],
     dealer: { name: "AutoFlex Germany", city: "Berlin", phone: "+49 30 555 0123", email: "sales@autoflex.de" },
     featured: true,
-    isNew: true,
+    freshArrival: true,
     stockNumber: "EV-1001",
     specs: {
       batteryCapacityKWh: 75,
@@ -68,7 +68,7 @@ const seedVehicles = [
     ],
     dealer: { name: "AutoFlex Germany", city: "Munich", phone: "+49 89 555 0211", email: "munich@autoflex.de" },
     featured: false,
-    isNew: false,
+    freshArrival: false,
     stockNumber: "EV-1024",
     specs: {
       batteryCapacityKWh: 58,
@@ -105,7 +105,7 @@ const seedVehicles = [
     ],
     dealer: { name: "AutoFlex Germany", city: "Hamburg", phone: "+49 40 555 0137", email: "hamburg@autoflex.de" },
     featured: true,
-    isNew: true,
+    freshArrival: true,
     stockNumber: "CB-2001",
     specs: {
       payloadKg: 180,
@@ -143,7 +143,7 @@ const seedVehicles = [
     ],
     dealer: { name: "AutoFlex Germany", city: "Cologne", phone: "+49 221 555 0199", email: "cologne@autoflex.de" },
     featured: false,
-    isNew: false,
+    freshArrival: false,
     stockNumber: "CB-2010",
     specs: {
       payloadKg: 150,
@@ -164,7 +164,17 @@ async function seedVehiclesIfNeeded() {
   return { seeded: true, count: seedVehicles.length };
 }
 
+async function removeSeedVehicles() {
+  const slugs = seedVehicles.map((vehicle) => vehicle.slug);
+  const result = await Vehicle.deleteMany({ slug: { $in: slugs } });
+
+  return {
+    removed: result.deletedCount || 0,
+  };
+}
+
 module.exports = {
   seedVehicles,
   seedVehiclesIfNeeded,
+  removeSeedVehicles,
 };

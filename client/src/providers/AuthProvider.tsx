@@ -7,9 +7,11 @@ import {
 
 interface AuthContextValue {
   isAuthenticated: boolean;
+  isLoading: boolean;
   username: string | null;
   signIn: () => void;
   signOut: () => void;
+  getIdToken: () => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -97,6 +99,7 @@ function AuthBridge({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       isAuthenticated: auth.state.isAuthenticated,
+      isLoading: auth.state.isLoading,
       username: auth.state.displayName || auth.state.username || null,
       signIn: () => {
         sessionStorage.setItem(AUTH_INTENT_KEY, "signin");
@@ -106,6 +109,7 @@ function AuthBridge({ children }: { children: React.ReactNode }) {
         sessionStorage.removeItem(AUTH_INTENT_KEY);
         void auth.signOut();
       },
+      getIdToken: () => auth.getIDToken(),
     }),
     [auth],
   );
