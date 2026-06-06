@@ -254,10 +254,15 @@ async function listMyVehicles(req, res) {
 async function updateVehicle(req, res) {
   assertValidObjectId(req.params.id);
   const payload = buildVehiclePayload(req.body, { isPartial: true });
-  const current = await Vehicle.findOne({ _id: req.params.id, createdBy: req.auth.sub });
+  const current = await Vehicle.findById(req.params.id);
 
   if (!current) {
-    return res.status(404).json({ message: "Vehicle not found or does not belong to you" });
+    return res.status(404).json({ message: "Vehicle not found" });
+  }
+
+  // Ownership guard: only block if createdBy is explicitly set to a different user
+  if (current.createdBy && current.createdBy !== req.auth.sub) {
+    return res.status(403).json({ message: "Vehicle does not belong to you" });
   }
 
   if (payload.slug) {
@@ -272,12 +277,18 @@ async function updateVehicle(req, res) {
 
 async function deleteVehicle(req, res) {
   assertValidObjectId(req.params.id);
-  const deleted = await Vehicle.findOneAndDelete({ _id: req.params.id, createdBy: req.auth.sub });
+  const current = await Vehicle.findById(req.params.id);
 
-  if (!deleted) {
-    return res.status(404).json({ message: "Vehicle not found or does not belong to you" });
+  if (!current) {
+    return res.status(404).json({ message: "Vehicle not found" });
   }
 
+  // Ownership guard: only block if createdBy is explicitly set to a different user
+  if (current.createdBy && current.createdBy !== req.auth.sub) {
+    return res.status(403).json({ message: "Vehicle does not belong to you" });
+  }
+
+  await Vehicle.findByIdAndDelete(req.params.id);
   return res.status(204).send();
 }
 
