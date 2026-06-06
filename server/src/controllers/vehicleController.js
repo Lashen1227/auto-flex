@@ -83,8 +83,20 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
     payload.status = body.status;
   }
 
+  if (body.createdBy !== undefined) {
+    payload.createdBy = body.createdBy;
+  }
+
   if (body.featured !== undefined) {
     payload.featured = parseMaybeBoolean(body.featured);
+  }
+
+  if (body.stockCount !== undefined) {
+    payload.stockCount = parseMaybeNumber(body.stockCount);
+  }
+
+  if (body.availability !== undefined) {
+    payload.availability = parseMaybeBoolean(body.availability);
   }
 
   if (body.isNew !== undefined) {
@@ -225,6 +237,7 @@ async function getVehicleById(req, res) {
 
 async function createVehicle(req, res) {
   const payload = buildVehiclePayload(req.body);
+  payload.createdBy = req.auth?.sub;
   payload.slug = payload.slug || slugify([payload.category, payload.model, payload.year].join(" "));
   payload.slug = await ensureUniqueSlug(payload.slug);
 
@@ -232,13 +245,19 @@ async function createVehicle(req, res) {
   return res.status(201).json({ data: vehicle.toJSON() });
 }
 
+async function listMyVehicles(req, res) {
+  const filter = { createdBy: req.auth.sub };
+  const vehicles = await Vehicle.find(filter).sort("-createdAt");
+  res.json({ data: vehicles.map((vehicle) => vehicle.toJSON()) });
+}
+
 async function updateVehicle(req, res) {
   assertValidObjectId(req.params.id);
   const payload = buildVehiclePayload(req.body, { isPartial: true });
-  const current = await Vehicle.findById(req.params.id);
+  const current = await Vehicle.findOne({ _id: req.params.id, createdBy: req.auth.sub });
 
   if (!current) {
-    return res.status(404).json({ message: "Vehicle not found" });
+    return res.status(404).json({ message: "Vehicle not found or does not belong to you" });
   }
 
   if (payload.slug) {
@@ -253,10 +272,10 @@ async function updateVehicle(req, res) {
 
 async function deleteVehicle(req, res) {
   assertValidObjectId(req.params.id);
-  const deleted = await Vehicle.findByIdAndDelete(req.params.id);
+  const deleted = await Vehicle.findOneAndDelete({ _id: req.params.id, createdBy: req.auth.sub });
 
   if (!deleted) {
-    return res.status(404).json({ message: "Vehicle not found" });
+    return res.status(404).json({ message: "Vehicle not found or does not belong to you" });
   }
 
   return res.status(204).send();
@@ -302,6 +321,7 @@ module.exports = {
   createVehicle,
   updateVehicle,
   deleteVehicle,
+  listMyVehicles,
   getVehicleSummary,
   listCategories,
 };

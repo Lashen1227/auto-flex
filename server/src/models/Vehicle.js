@@ -37,6 +37,9 @@ const vehicleSchema = new mongoose.Schema(
     bodyStyle: { type: String, trim: true, default: "" },
     condition: { type: String, trim: true, default: "new" },
     features: [{ type: String, trim: true }],
+    createdBy: { type: String, index: true, trim: true },
+    stockCount: { type: Number, default: 1, min: 0 },
+    availability: { type: Boolean, default: true },
     dealer: { type: dealerSchema, default: () => ({}) },
     featured: { type: Boolean, default: false, index: true },
     freshArrival: { type: Boolean, default: true },
@@ -56,7 +59,6 @@ vehicleSchema.set("toJSON", {
     ret.id = ret._id.toString();
     ret.range = ret.rangeKm;
     ret.isNew = ret.freshArrival;
-    delete ret._id;
     return ret;
   },
 });

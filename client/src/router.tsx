@@ -11,16 +11,16 @@ import { Header } from "@/components/Header";
 import { VehicleCard } from "@/components/VehicleCard";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
-import {
-  CATEGORY_META,
-  type Vehicle,
-} from "@/lib/vehicles";
+import { CATEGORY_META, type Vehicle } from "@/lib/vehicles";
 import {
   createVehicle,
+  deleteVehicle,
   fetchCategories,
+  fetchMyVehicles,
   fetchSummary,
   fetchVehicle,
   fetchVehicles,
+  updateVehicle,
 } from "@/lib/api";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -52,12 +52,7 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
-const routeTree = rootRoute.addChildren([
-  homeRoute,
-  vehiclesRoute,
-  vehicleDetailRoute,
-  adminRoute,
-]);
+const routeTree = rootRoute.addChildren([homeRoute, vehiclesRoute, vehicleDetailRoute, adminRoute]);
 
 export const router = createRouter({ routeTree });
 
@@ -80,7 +75,9 @@ function RootLayout() {
 
 function HomePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [summary, setSummary] = useState<Awaited<ReturnType<typeof fetchSummary>>["data"] | null>(null);
+  const [summary, setSummary] = useState<Awaited<ReturnType<typeof fetchSummary>>["data"] | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,14 +133,21 @@ function HomePage() {
             A flexible inventory platform for electric cars and cargo bikes.
           </h1>
           <p className="max-w-2xl text-base text-white/70 md:text-lg">
-            AutoFlex is built to grow. The backend can add new vehicle categories
-            over time without changing the front door of the app.
+            AutoFlex is built to grow. The backend can add new vehicle categories over time without
+            changing the front door of the app.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button asChild className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]">
+            <Button
+              asChild
+              className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]"
+            >
               <Link to="/vehicles">Browse inventory</Link>
             </Button>
-            <Button asChild variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
+            <Button
+              asChild
+              variant="outline"
+              className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+            >
               <Link to="/admin">Add a vehicle</Link>
             </Button>
           </div>
@@ -162,10 +166,7 @@ function HomePage() {
           ) : summary ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <Stat label="Vehicles" value={summary.totals.count} />
-              <Stat
-                label="Avg price"
-                value={formatCurrency(summary.totals.averagePrice)}
-              />
+              <Stat label="Avg price" value={formatCurrency(summary.totals.averagePrice)} />
               <Stat label="Lowest" value={formatCurrency(summary.totals.minPrice)} />
               <Stat label="Highest" value={formatCurrency(summary.totals.maxPrice)} />
             </div>
@@ -176,10 +177,8 @@ function HomePage() {
       <section className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-          <h2 className="text-2xl font-semibold">Latest vehicles</h2>
-          <p className="text-sm text-white/60">
-              Live inventory coming directly from MongoDB.
-            </p>
+            <h2 className="text-2xl font-semibold">Latest vehicles</h2>
+            <p className="text-sm text-white/60">Live inventory coming directly from MongoDB.</p>
           </div>
           <Link className="text-sm text-[color:var(--electric)] hover:underline" to="/vehicles">
             View all
@@ -188,8 +187,8 @@ function HomePage() {
 
         {vehicles.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-sm text-white/60">
-            No vehicles are stored in MongoDB yet. Add one from the admin page to
-            populate the cards here.
+            No vehicles are stored in MongoDB yet. Add one from the admin page to populate the cards
+            here.
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -334,7 +333,9 @@ function VehiclesPage() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">
-                {search || category || status ? "No vehicles match your filters" : "Your inventory is empty"}
+                {search || category || status
+                  ? "No vehicles match your filters"
+                  : "Your inventory is empty"}
               </h2>
               <p className="mx-auto max-w-xl text-sm leading-6 text-white/65">
                 {search || category || status
@@ -358,7 +359,10 @@ function VehiclesPage() {
                   Clear filters
                 </Button>
               )}
-              <Button asChild className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]">
+              <Button
+                asChild
+                className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]"
+              >
                 <Link to="/admin">Add first vehicle</Link>
               </Button>
             </div>
@@ -417,9 +421,7 @@ function VehicleDetailPage() {
           </div>
         </div>
         <div className="space-y-4 p-6">
-            <div className="text-sm uppercase tracking-[0.3em] text-white/45">
-              {vehicle.year}
-            </div>
+          <div className="text-sm uppercase tracking-[0.3em] text-white/45">{vehicle.year}</div>
           <h1 className="text-3xl font-semibold">{vehicle.model}</h1>
           <p className="text-white/70">{vehicle.description || vehicle.summary}</p>
           <div className="flex flex-wrap gap-2 text-sm text-white/65">
@@ -465,6 +467,11 @@ function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(vehicleFormDefaults);
+  const [myVehicles, setMyVehicles] = useState<Vehicle[]>([]);
+  const [loadingMyVehicles, setLoadingMyVehicles] = useState(false);
+  const [myVehiclesError, setMyVehiclesError] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Record<string, Partial<Vehicle>>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const categoryOptions = useMemo(
     () => [
@@ -483,6 +490,31 @@ function AdminPage() {
     [],
   );
 
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    let active = true;
+
+    const load = async () => {
+      setLoadingMyVehicles(true);
+      setMyVehiclesError(null);
+      try {
+        const idToken = await auth.getIdToken();
+        const items = await fetchMyVehicles(idToken);
+        if (active) setMyVehicles(items);
+      } catch (err) {
+        if (active)
+          setMyVehiclesError(err instanceof Error ? err.message : "Failed to load your vehicles");
+      } finally {
+        if (active) setLoadingMyVehicles(false);
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [auth.isAuthenticated]);
+
   if (!auth.isAuthenticated) {
     return (
       <GlassCard className="p-6">
@@ -494,8 +526,83 @@ function AdminPage() {
     );
   }
 
-  const setField = <K extends keyof typeof vehicleFormDefaults>(key: K, value: (typeof vehicleFormDefaults)[K]) => {
+  const setField = <K extends keyof typeof vehicleFormDefaults>(
+    key: K,
+    value: (typeof vehicleFormDefaults)[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setEditField = (id: string, field: string, value: any) => {
+    setEditDraft((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
+  };
+
+  const handleSave = async (vehicle: Vehicle) => {
+    const draft = editDraft[vehicle.id];
+    if (!draft || Object.keys(draft).length === 0) return;
+    setSavingId(vehicle.id);
+    try {
+      const idToken = await auth.getIdToken();
+      const updated = await updateVehicle(vehicle.id, draft, idToken);
+      setMyVehicles((prev) => prev.map((v) => (v.id === vehicle.id ? updated : v)));
+      setEditDraft((prev) => {
+        const next = { ...prev };
+        delete next[vehicle.id];
+        return next;
+      });
+    } catch (err) {
+      setMyVehiclesError(err instanceof Error ? err.message : "Failed to update vehicle");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setSavingId(id);
+    try {
+      const idToken = await auth.getIdToken();
+      await deleteVehicle(id, idToken);
+      setMyVehicles((prev) => prev.filter((v) => v.id !== id));
+      setEditDraft((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    } catch (err) {
+      setMyVehiclesError(err instanceof Error ? err.message : "Failed to delete vehicle");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleMarkSold = async (vehicle: Vehicle) => {
+    setSavingId(vehicle.id);
+    try {
+      const idToken = await auth.getIdToken();
+      const updated = await updateVehicle(vehicle.id, { status: "sold" }, idToken);
+      setMyVehicles((prev) => prev.map((v) => (v.id === vehicle.id ? updated : v)));
+    } catch (err) {
+      setMyVehiclesError(err instanceof Error ? err.message : "Failed to mark vehicle as sold");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const refreshMyVehicles = async () => {
+    setLoadingMyVehicles(true);
+    setMyVehiclesError(null);
+    try {
+      const idToken = await auth.getIdToken();
+      const items = await fetchMyVehicles(idToken);
+      setMyVehicles(items);
+    } catch (err) {
+      setMyVehiclesError(err instanceof Error ? err.message : "Failed to load your vehicles");
+    } finally {
+      setLoadingMyVehicles(false);
+    }
   };
 
   const parseList = (value: string) =>
@@ -505,102 +612,232 @@ function AdminPage() {
       .filter(Boolean);
 
   return (
-    <GlassCard className="space-y-5 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Add vehicle</h1>
-        <p className="text-white/70">
-          A simple form for adding one clean inventory record at a time.
-        </p>
-      </div>
-
-      <form
-        className="space-y-6"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          setSubmitting(true);
-          setError(null);
-          setStatus(null);
-
-          try {
-            const idToken = await auth.getIdToken();
-            const created = await createVehicle(
-              {
-                ...form,
-                priceEUR: Number(form.priceEUR),
-                year: Number(form.year),
-                summary: form.summary || form.model,
-                featured: form.featured,
-                freshArrival: form.freshArrival,
-              },
-              idToken,
-            );
-
-            setStatus(`Created ${created.model} in MongoDB.`);
-            setForm(vehicleFormDefaults);
-            navigate({ to: "/vehicles" });
-          } catch (createError) {
-            setError(createError instanceof Error ? createError.message : "Failed to save vehicle");
-          } finally {
-            setSubmitting(false);
-          }
-        }}
-      >
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <SelectField
-            label="Category"
-            value={form.category}
-            onChange={(value) => setField("category", value)}
-            options={categoryOptions}
-          />
-          <SelectField
-            label="Status"
-            value={form.status}
-            onChange={(value) => setField("status", value)}
-            options={statusOptions}
-          />
-          <Field label="Model" value={form.model} onChange={(value) => setField("model", value)} />
-          <Field label="Year" type="number" value={form.year} onChange={(value) => setField("year", value)} />
-          <Field label="Price EUR" type="number" value={form.priceEUR} onChange={(value) => setField("priceEUR", value)} />
-          <Field label="Location" value={form.location} onChange={(value) => setField("location", value)} />
-          <div className="md:col-span-2 xl:col-span-3">
-            <Field label="Summary" value={form.summary} onChange={(value) => setField("summary", value)} />
-          </div>
-          <div className="flex flex-wrap gap-4 md:col-span-2 xl:col-span-3">
-            <ToggleField
-              label="Featured"
-              checked={form.featured}
-              onChange={(checked) => setField("featured", checked)}
-            />
-            <ToggleField
-              label="Fresh arrival"
-              checked={form.freshArrival}
-              onChange={(checked) => setField("freshArrival", checked)}
-            />
-          </div>
+    <div className="space-y-8">
+      <GlassCard className="space-y-5 p-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Add vehicle</h1>
+          <p className="text-white/70">
+            A simple form for adding one clean inventory record at a time.
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]"
-          >
-            {submitting ? "Saving..." : "Save vehicle"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
-            onClick={() => setForm(vehicleFormDefaults)}
-          >
-            Reset form
-          </Button>
+        <form
+          className="space-y-6"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            setSubmitting(true);
+            setError(null);
+            setStatus(null);
+
+            try {
+              const idToken = await auth.getIdToken();
+              const created = await createVehicle(
+                {
+                  ...form,
+                  priceEUR: Number(form.priceEUR),
+                  year: Number(form.year),
+                  summary: form.summary || form.model,
+                  featured: form.featured,
+                  freshArrival: form.freshArrival,
+                },
+                idToken,
+              );
+
+              setStatus(`Created ${created.model} in MongoDB.`);
+              setForm(vehicleFormDefaults);
+              void refreshMyVehicles();
+              navigate({ to: "/vehicles" });
+            } catch (createError) {
+              setError(
+                createError instanceof Error ? createError.message : "Failed to save vehicle",
+              );
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        >
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <SelectField
+              label="Category"
+              value={form.category}
+              onChange={(value) => setField("category", value)}
+              options={categoryOptions}
+            />
+            <SelectField
+              label="Status"
+              value={form.status}
+              onChange={(value) => setField("status", value)}
+              options={statusOptions}
+            />
+            <Field
+              label="Model"
+              value={form.model}
+              onChange={(value) => setField("model", value)}
+            />
+            <Field
+              label="Year"
+              type="number"
+              value={form.year}
+              onChange={(value) => setField("year", value)}
+            />
+            <Field
+              label="Price EUR"
+              type="number"
+              value={form.priceEUR}
+              onChange={(value) => setField("priceEUR", value)}
+            />
+            <Field
+              label="Location"
+              value={form.location}
+              onChange={(value) => setField("location", value)}
+            />
+            <div className="md:col-span-2 xl:col-span-3">
+              <Field
+                label="Summary"
+                value={form.summary}
+                onChange={(value) => setField("summary", value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-4 md:col-span-2 xl:col-span-3">
+              <ToggleField
+                label="Featured"
+                checked={form.featured}
+                onChange={(checked) => setField("featured", checked)}
+              />
+              <ToggleField
+                label="Fresh arrival"
+                checked={form.freshArrival}
+                onChange={(checked) => setField("freshArrival", checked)}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]"
+            >
+              {submitting ? "Saving..." : "Save vehicle"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+              onClick={() => setForm(vehicleFormDefaults)}
+            >
+              Reset form
+            </Button>
+          </div>
+
+          {status ? <div className="text-sm text-emerald-300">{status}</div> : null}
+          {error ? <div className="text-sm text-red-200">{error}</div> : null}
+        </form>
+      </GlassCard>
+
+      <GlassCard className="space-y-5 p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">My Vehicles</h2>
+            <p className="text-sm text-white/60">
+              Manage your own inventory — edit, mark as sold, or delete.
+            </p>
+          </div>
+          {myVehiclesError ? <span className="text-sm text-red-200">{myVehiclesError}</span> : null}
         </div>
 
-        {status ? <div className="text-sm text-emerald-300">{status}</div> : null}
-        {error ? <div className="text-sm text-red-200">{error}</div> : null}
-      </form>
-    </GlassCard>
+        {loadingMyVehicles ? (
+          <div className="text-sm text-white/60">Loading your vehicles...</div>
+        ) : myVehicles.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-sm text-white/60">
+            You haven't added any vehicles yet.
+          </div>
+        ) : (
+          <div className="divide-y divide-white/10">
+            {myVehicles.map((vehicle) => {
+              const draft = editDraft[vehicle.id] || {};
+
+              const draftStatus = draft.status ?? vehicle.status;
+              const draftStockCount = draft.stockCount ?? vehicle.stockCount;
+              const draftAvailability = draft.availability ?? vehicle.availability;
+              const draftPriceEUR = draft.priceEUR ?? vehicle.priceEUR;
+
+              const hasEdits = Object.keys(editDraft[vehicle.id] || {}).length > 0;
+
+              return (
+                <div
+                  key={vehicle.id}
+                  className="flex flex-wrap items-end gap-4 py-4 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="font-medium">{vehicle.model}</div>
+                    <div className="text-sm text-white/50">
+                      {vehicle.year} · {prettyStatus(vehicle.status)}
+                    </div>
+                  </div>
+
+                  <Field
+                    label="Price EUR"
+                    type="number"
+                    value={draftPriceEUR}
+                    onChange={(value) => setEditField(vehicle.id, "priceEUR", Number(value))}
+                  />
+
+                  <SelectField
+                    label="Status"
+                    value={draftStatus}
+                    onChange={(value) => setEditField(vehicle.id, "status", value)}
+                    options={statusOptions}
+                  />
+
+                  <Field
+                    label="Stock"
+                    type="number"
+                    value={draftStockCount}
+                    onChange={(value) => setEditField(vehicle.id, "stockCount", Number(value))}
+                  />
+
+                  <ToggleField
+                    label="Available"
+                    checked={draftAvailability}
+                    onChange={(checked) => setEditField(vehicle.id, "availability", checked)}
+                  />
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      disabled={!hasEdits || savingId === vehicle.id}
+                      className="bg-[color:var(--electric)] text-black hover:bg-[color:var(--electric-2)]"
+                      onClick={() => handleSave(vehicle)}
+                    >
+                      {savingId === vehicle.id ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={vehicle.status === "sold" || savingId === vehicle.id}
+                      className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+                      onClick={() => handleMarkSold(vehicle)}
+                    >
+                      Mark sold
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={savingId === vehicle.id}
+                      className="border-red-800/40 bg-red-950/30 text-red-300 hover:bg-red-950/60"
+                      onClick={() => handleDelete(vehicle.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </GlassCard>
+    </div>
   );
 }
 
@@ -691,11 +928,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 function InfoPill({ text }: { text: string }) {
-  return (
-    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-      {text}
-    </span>
-  );
+  return <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{text}</span>;
 }
 
 function formatCurrency(value: number) {

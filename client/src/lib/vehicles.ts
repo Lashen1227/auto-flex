@@ -24,6 +24,9 @@ export interface Vehicle {
   bodyStyle?: string;
   condition?: string;
   features?: string[];
+  createdBy?: string;
+  stockCount?: number;
+  availability?: boolean;
   featured?: boolean;
   isNew?: boolean;
   freshArrival?: boolean;
@@ -77,6 +80,9 @@ export function normalizeVehicle(raw: Record<string, any> = {}): Vehicle {
     bodyStyle: raw.bodyStyle ?? "",
     condition: raw.condition ?? "",
     features: Array.isArray(raw.features) ? raw.features : [],
+    createdBy: raw.createdBy ?? "",
+    stockCount: raw.stockCount ?? 1,
+    availability: raw.availability ?? true,
     featured: Boolean(raw.featured),
     isNew: Boolean(raw.isNew ?? raw.freshArrival),
     freshArrival: Boolean(raw.freshArrival ?? raw.isNew),
