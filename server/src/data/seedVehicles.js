@@ -4,7 +4,6 @@ const seedVehicles = [
   {
     slug: "tesla-model-y-long-range-2025",
     category: "electric-car",
-    make: "Tesla",
     model: "Model Y Long Range",
     year: 2025,
     priceEUR: 49990,
@@ -22,12 +21,6 @@ const seedVehicles = [
     bodyStyle: "SUV",
     condition: "new",
     features: ["Fast charging", "Heat pump", "Autopilot-ready hardware", "Panoramic glass roof"],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=80",
-        alt: "Electric SUV in a dealership showroom",
-      },
-    ],
     dealer: { name: "AutoFlex Germany", city: "Berlin", phone: "+49 30 555 0123", email: "sales@autoflex.de" },
     featured: true,
     freshArrival: true,
@@ -41,7 +34,6 @@ const seedVehicles = [
   {
     slug: "volkswagen-id-3-pro-2024",
     category: "electric-car",
-    make: "Volkswagen",
     model: "ID.3 Pro",
     year: 2024,
     priceEUR: 36950,
@@ -60,12 +52,6 @@ const seedVehicles = [
     condition: "used",
     mileageKm: 8200,
     features: ["Adaptive cruise control", "Wireless CarPlay", "Parking sensors", "LED matrix lights"],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80",
-        alt: "Electric hatchback parked in a city street",
-      },
-    ],
     dealer: { name: "AutoFlex Germany", city: "Munich", phone: "+49 89 555 0211", email: "munich@autoflex.de" },
     featured: false,
     freshArrival: false,
@@ -79,7 +65,6 @@ const seedVehicles = [
   {
     slug: "urban-cargo-longtail-2025",
     category: "cargo-bike",
-    make: "UrbanRide",
     model: "Cargo Longtail",
     year: 2025,
     priceEUR: 5290,
@@ -97,12 +82,6 @@ const seedVehicles = [
     bodyStyle: "Cargo bike",
     condition: "new",
     features: ["Front cargo rack", "Integrated lights", "Rain cover ready", "Puncture-resistant tyres"],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1525104698732-9d5c1b54d2e6?auto=format&fit=crop&w=1200&q=80",
-        alt: "Cargo bike parked in the city",
-      },
-    ],
     dealer: { name: "AutoFlex Germany", city: "Hamburg", phone: "+49 40 555 0137", email: "hamburg@autoflex.de" },
     featured: true,
     freshArrival: true,
@@ -116,7 +95,6 @@ const seedVehicles = [
   {
     slug: "reiserad-cargo-pro-2024",
     category: "cargo-bike",
-    make: "Reiserad",
     model: "Cargo Pro",
     year: 2024,
     priceEUR: 4490,
@@ -135,12 +113,6 @@ const seedVehicles = [
     condition: "used",
     mileageKm: 420,
     features: ["Lockable battery", "Suspension fork", "Extended mudguards", "Rear basket mount"],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80",
-        alt: "Cargo bike in a dealership-style presentation",
-      },
-    ],
     dealer: { name: "AutoFlex Germany", city: "Cologne", phone: "+49 221 555 0199", email: "cologne@autoflex.de" },
     featured: false,
     freshArrival: false,

@@ -29,11 +29,11 @@ function unwrapData<T>(payload: ApiEnvelope<T> | T | null | undefined, fallbackM
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(init?.headers || {}),
+      ...(init?.headers as Record<string, string>),
     },
-    ...init,
   });
 
   if (!response.ok) {

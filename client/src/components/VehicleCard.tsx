@@ -31,7 +31,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         <div className="space-y-3 p-5 text-white">
           <div>
             <div className="text-xs uppercase tracking-wider text-white/50">
-              {vehicle.year} · {vehicle.make}
+              {vehicle.year}
             </div>
             <div className="text-lg font-semibold">{vehicle.model}</div>
           </div>

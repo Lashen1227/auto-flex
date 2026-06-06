@@ -51,7 +51,6 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
   const fields = [
     "slug",
     "category",
-    "make",
     "model",
     "location",
     "summary",
@@ -105,10 +104,6 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
           .filter(Boolean);
   }
 
-  if (body.images !== undefined) {
-    payload.images = Array.isArray(body.images) ? body.images : [];
-  }
-
   if (body.dealer !== undefined) {
     payload.dealer = body.dealer;
   }
@@ -122,7 +117,7 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
   }
 
   if (!isPartial) {
-    const required = ["category", "make", "model", "year", "priceEUR", "location"];
+    const required = ["category", "model", "year", "priceEUR", "location"];
     const missing = required.filter((field) => payload[field] === undefined || payload[field] === "");
 
     if (missing.length > 0) {
@@ -132,7 +127,7 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
     }
 
     if (!payload.slug) {
-      payload.slug = slugify([payload.category, payload.make, payload.model, payload.year].join(" "));
+      payload.slug = slugify([payload.category, payload.model, payload.year].join(" "));
     }
   }
 
@@ -163,7 +158,6 @@ async function listVehicles(req, res) {
   const {
     category,
     status,
-    make,
     location,
     search,
     featured,
@@ -178,7 +172,6 @@ async function listVehicles(req, res) {
 
   if (category) filter.category = category;
   if (status) filter.status = status;
-  if (make) filter.make = new RegExp(make, "i");
   if (location) filter.location = new RegExp(location, "i");
   if (featured !== undefined) filter.featured = parseMaybeBoolean(featured);
 
@@ -191,7 +184,6 @@ async function listVehicles(req, res) {
   if (search) {
     const regex = new RegExp(search, "i");
     filter.$or = [
-      { make: regex },
       { model: regex },
       { category: regex },
       { location: regex },
@@ -233,7 +225,7 @@ async function getVehicleById(req, res) {
 
 async function createVehicle(req, res) {
   const payload = buildVehiclePayload(req.body);
-  payload.slug = payload.slug || slugify([payload.category, payload.make, payload.model, payload.year].join(" "));
+  payload.slug = payload.slug || slugify([payload.category, payload.model, payload.year].join(" "));
   payload.slug = await ensureUniqueSlug(payload.slug);
 
   const vehicle = await Vehicle.create(payload);

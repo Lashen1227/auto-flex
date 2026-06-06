@@ -1,13 +1,5 @@
 const mongoose = require("mongoose");
 
-const mediaSchema = new mongoose.Schema(
-  {
-    url: { type: String, required: true, trim: true },
-    alt: { type: String, trim: true, default: "" },
-  },
-  { _id: false }
-);
-
 const dealerSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true, default: "AutoFlex Germany" },
@@ -22,7 +14,6 @@ const vehicleSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, index: true, trim: true },
     category: { type: String, required: true, index: true, trim: true },
-    make: { type: String, required: true, index: true, trim: true },
     model: { type: String, required: true, trim: true },
     year: { type: Number, required: true, index: true, min: 1886 },
     priceEUR: { type: Number, required: true, index: true, min: 0 },
@@ -46,7 +37,6 @@ const vehicleSchema = new mongoose.Schema(
     bodyStyle: { type: String, trim: true, default: "" },
     condition: { type: String, trim: true, default: "new" },
     features: [{ type: String, trim: true }],
-    images: [mediaSchema],
     dealer: { type: dealerSchema, default: () => ({}) },
     featured: { type: Boolean, default: false, index: true },
     freshArrival: { type: Boolean, default: true },
@@ -71,7 +61,7 @@ vehicleSchema.set("toJSON", {
   },
 });
 
-vehicleSchema.index({ make: 1, model: 1, year: -1 });
+vehicleSchema.index({ model: 1, year: -1 });
 vehicleSchema.index({ category: 1, status: 1, priceEUR: 1 });
 vehicleSchema.index({ location: 1, featured: 1 });
 

@@ -265,7 +265,7 @@ function VehiclesPage() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search make, model, city..."
+              placeholder="Search model, city..."
               className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35 focus:border-[color:var(--electric)]"
             />
           </div>
@@ -417,9 +417,9 @@ function VehicleDetailPage() {
           </div>
         </div>
         <div className="space-y-4 p-6">
-          <div className="text-sm uppercase tracking-[0.3em] text-white/45">
-            {vehicle.year} · {vehicle.make}
-          </div>
+            <div className="text-sm uppercase tracking-[0.3em] text-white/45">
+              {vehicle.year}
+            </div>
           <h1 className="text-3xl font-semibold">{vehicle.model}</h1>
           <p className="text-white/70">{vehicle.description || vehicle.summary}</p>
           <div className="flex flex-wrap gap-2 text-sm text-white/65">
@@ -526,19 +526,16 @@ function AdminPage() {
             const created = await createVehicle(
               {
                 ...form,
-                images: form.imageUrl
-                  ? [{ url: form.imageUrl, alt: `${form.make} ${form.model}`.trim() }]
-                  : [],
                 priceEUR: Number(form.priceEUR),
                 year: Number(form.year),
-                summary: form.summary || `${form.make} ${form.model}`.trim(),
+                summary: form.summary || form.model,
                 featured: form.featured,
                 freshArrival: form.freshArrival,
               },
               idToken,
             );
 
-            setStatus(`Created ${created.make} ${created.model} in MongoDB.`);
+            setStatus(`Created ${created.model} in MongoDB.`);
             setForm(vehicleFormDefaults);
             navigate({ to: "/vehicles" });
           } catch (createError) {
@@ -561,12 +558,10 @@ function AdminPage() {
             onChange={(value) => setField("status", value)}
             options={statusOptions}
           />
-          <Field label="Make" value={form.make} onChange={(value) => setField("make", value)} />
           <Field label="Model" value={form.model} onChange={(value) => setField("model", value)} />
           <Field label="Year" type="number" value={form.year} onChange={(value) => setField("year", value)} />
           <Field label="Price EUR" type="number" value={form.priceEUR} onChange={(value) => setField("priceEUR", value)} />
           <Field label="Location" value={form.location} onChange={(value) => setField("location", value)} />
-          <Field label="Image URL" value={form.imageUrl} onChange={(value) => setField("imageUrl", value)} />
           <div className="md:col-span-2 xl:col-span-3">
             <Field label="Summary" value={form.summary} onChange={(value) => setField("summary", value)} />
           </div>
@@ -718,12 +713,10 @@ function prettyStatus(status: string) {
 const vehicleFormDefaults = {
   category: "electric-car",
   status: "available",
-  make: "",
   model: "",
   year: new Date().getFullYear(),
   priceEUR: 0,
   location: "Berlin",
-  imageUrl: "",
   summary: "",
   featured: true,
   freshArrival: true,
