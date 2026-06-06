@@ -7,6 +7,22 @@ The project is split into two apps:
 - `client`: a Vite + React + TanStack Router frontend
 - `server`: an Express + MongoDB API with Asgardeo-based authentication for protected actions
 
+## Asgardeo Authentication
+
+AutoFlex uses Asgardeo for sign-in and protected API access.
+
+- Users sign in through the frontend with the Asgardeo React SDK
+- The frontend sends the Asgardeo ID token to the backend
+- The backend verifies the token before allowing vehicle create, update, and delete requests
+- Authenticated users are synced into MongoDB through the `/api/users/sync` endpoint
+
+To make auth work locally, the client and server Asgardeo settings must match:
+
+- `VITE_ASGARDEO_CLIENT_ID`
+- `VITE_ASGARDEO_BASE_URL`
+- `ASGARDEO_CLIENT_ID`
+- `ASGARDEO_BASE_URL`
+
 ## Features
 
 - Browse live inventory from MongoDB
@@ -79,5 +95,4 @@ npm run dev
 ```
 
 By default the API runs on `http://localhost:8080`.
-
 
