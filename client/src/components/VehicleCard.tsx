@@ -10,19 +10,12 @@ const euro = new Intl.NumberFormat("de-DE", {
 });
 
 export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const meta = CATEGORY_META[vehicle.category];
+  const meta = CATEGORY_META[vehicle.category] ?? CATEGORY_META.default;
 
   return (
-    <Link
-      to="/vehicles/$id"
-      params={{ id: vehicle.id }}
-      className="group block"
-    >
+    <Link to="/vehicles/$id" params={{ id: vehicle.id }} className="group block">
       <GlassCard className="overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/15">
-        <div
-          className="relative h-44 overflow-hidden"
-          style={{ background: meta.gradient }}
-        >
+        <div className="relative h-44 overflow-hidden" style={{ background: meta.gradient }}>
           <div className="absolute inset-0 grid place-items-center text-7xl opacity-80 transition group-hover:scale-110">
             {meta.emoji}
           </div>
@@ -61,9 +54,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
           <div className="flex items-end justify-between border-t border-white/10 pt-3">
             <div className="text-xs text-white/50">From</div>
-            <div className="text-xl font-bold tracking-tight">
-              {euro.format(vehicle.priceEUR)}
-            </div>
+            <div className="text-xl font-bold tracking-tight">{euro.format(vehicle.priceEUR)}</div>
           </div>
         </div>
       </GlassCard>
@@ -79,13 +70,8 @@ function StatusPill({ status }: { status: Vehicle["status"] }) {
   } as const;
   const { label, color } = map[status];
   return (
-    <span
-      className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur"
-    >
-      <span
-        className="h-1.5 w-1.5 rounded-full"
-        style={{ background: color, boxShadow: `0 0 8px ${color}` }}
-      />
+    <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
       {label}
     </span>
   );

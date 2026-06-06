@@ -1,0 +1,25 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "seed:demo": "node -e \"process.env.DEMO_SEED_VEHICLES='true'; require('./index')\"",
+    "clean:demo": "node scripts/cleanDemoVehicles.js",
+    "test": "node --check index.js"
+  },
+  "author": "Lashen Martino",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.2.0",
+    "jose": "^6.2.3",
+    "mongoose": "^9.6.3",
+    "morgan": "^1.11.0",
+    "nodemon": "^3.1.14"
+  }
+}
