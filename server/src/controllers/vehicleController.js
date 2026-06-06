@@ -51,7 +51,6 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
   const fields = [
     "slug",
     "category",
-    "make",
     "model",
     "location",
     "summary",
@@ -84,8 +83,20 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
     payload.status = body.status;
   }
 
+  if (body.createdBy !== undefined) {
+    payload.createdBy = body.createdBy;
+  }
+
   if (body.featured !== undefined) {
     payload.featured = parseMaybeBoolean(body.featured);
+  }
+
+  if (body.stockCount !== undefined) {
+    payload.stockCount = parseMaybeNumber(body.stockCount);
+  }
+
+  if (body.availability !== undefined) {
+    payload.availability = parseMaybeBoolean(body.availability);
   }
 
   if (body.isNew !== undefined) {
@@ -105,10 +116,6 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
           .filter(Boolean);
   }
 
-  if (body.images !== undefined) {
-    payload.images = Array.isArray(body.images) ? body.images : [];
-  }
-
   if (body.dealer !== undefined) {
     payload.dealer = body.dealer;
   }
@@ -122,7 +129,7 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
   }
 
   if (!isPartial) {
-    const required = ["category", "make", "model", "year", "priceEUR", "location"];
+    const required = ["category", "model", "year", "priceEUR", "location"];
     const missing = required.filter((field) => payload[field] === undefined || payload[field] === "");
 
     if (missing.length > 0) {
@@ -132,7 +139,7 @@ function buildVehiclePayload(body, { isPartial = false } = {}) {
     }
 
     if (!payload.slug) {
-      payload.slug = slugify([payload.category, payload.make, payload.model, payload.year].join(" "));
+      payload.slug = slugify([payload.category, payload.model, payload.year].join(" "));
     }
   }
 
@@ -163,7 +170,6 @@ async function listVehicles(req, res) {
   const {
     category,
     status,
-    make,
     location,
     search,
     featured,
@@ -178,7 +184,6 @@ async function listVehicles(req, res) {
 
   if (category) filter.category = category;
   if (status) filter.status = status;
-  if (make) filter.make = new RegExp(make, "i");
   if (location) filter.location = new RegExp(location, "i");
   if (featured !== undefined) filter.featured = parseMaybeBoolean(featured);
 
@@ -191,7 +196,6 @@ async function listVehicles(req, res) {
   if (search) {
     const regex = new RegExp(search, "i");
     filter.$or = [
-      { make: regex },
       { model: regex },
       { category: regex },
       { location: regex },
@@ -233,20 +237,27 @@ async function getVehicleById(req, res) {
 
 async function createVehicle(req, res) {
   const payload = buildVehiclePayload(req.body);
-  payload.slug = payload.slug || slugify([payload.category, payload.make, payload.model, payload.year].join(" "));
+  payload.createdBy = req.auth?.sub;
+  payload.slug = payload.slug || slugify([payload.category, payload.model, payload.year].join(" "));
   payload.slug = await ensureUniqueSlug(payload.slug);
 
   const vehicle = await Vehicle.create(payload);
   return res.status(201).json({ data: vehicle.toJSON() });
 }
 
+async function listMyVehicles(req, res) {
+  const filter = { createdBy: req.auth.sub };
+  const vehicles = await Vehicle.find(filter).sort("-createdAt");
+  res.json({ data: vehicles.map((vehicle) => vehicle.toJSON()) });
+}
+
 async function updateVehicle(req, res) {
   assertValidObjectId(req.params.id);
   const payload = buildVehiclePayload(req.body, { isPartial: true });
-  const current = await Vehicle.findById(req.params.id);
+  const current = await Vehicle.findOne({ _id: req.params.id, createdBy: req.auth.sub });
 
   if (!current) {
-    return res.status(404).json({ message: "Vehicle not found" });
+    return res.status(404).json({ message: "Vehicle not found or does not belong to you" });
   }
 
   if (payload.slug) {
@@ -261,10 +272,10 @@ async function updateVehicle(req, res) {
 
 async function deleteVehicle(req, res) {
   assertValidObjectId(req.params.id);
-  const deleted = await Vehicle.findByIdAndDelete(req.params.id);
+  const deleted = await Vehicle.findOneAndDelete({ _id: req.params.id, createdBy: req.auth.sub });
 
   if (!deleted) {
-    return res.status(404).json({ message: "Vehicle not found" });
+    return res.status(404).json({ message: "Vehicle not found or does not belong to you" });
   }
 
   return res.status(204).send();
@@ -310,6 +321,7 @@ module.exports = {
   createVehicle,
   updateVehicle,
   deleteVehicle,
+  listMyVehicles,
   getVehicleSummary,
   listCategories,
 };

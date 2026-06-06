@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "seed:demo": "node -e \"process.env.DEMO_SEED_VEHICLES='true'; require('./index')\"",
-    "clean:demo": "node scripts/cleanDemoVehicles.js",
     "test": "node --check index.js"
   },
   "author": "Lashen Martino",

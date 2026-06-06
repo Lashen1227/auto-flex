@@ -6,7 +6,6 @@ export interface Vehicle {
   id: string;
   slug?: string;
   category: VehicleCategory;
-  make: string;
   model: string;
   year: number;
   priceEUR: number;
@@ -25,7 +24,9 @@ export interface Vehicle {
   bodyStyle?: string;
   condition?: string;
   features?: string[];
-  images?: Array<{ url: string; alt?: string }>;
+  createdBy?: string;
+  stockCount?: number;
+  availability?: boolean;
   featured?: boolean;
   isNew?: boolean;
   freshArrival?: boolean;
@@ -38,7 +39,7 @@ export const CATEGORY_META: Record<
 > = {
   "electric-car": {
     label: "Electric Cars",
-    emoji: "⚡",
+    emoji: "🚗",
     accent: "#8DD8FF",
     gradient: "linear-gradient(135deg, #1E3A8A 0%, #0EA5E9 55%, #1D4ED8 100%)",
   },
@@ -61,7 +62,6 @@ export function normalizeVehicle(raw: Record<string, any> = {}): Vehicle {
     id: String(raw.id ?? raw._id ?? raw.slug ?? ""),
     slug: raw.slug,
     category: raw.category ?? "default",
-    make: raw.make ?? "",
     model: raw.model ?? "",
     year: Number(raw.year ?? 0),
     priceEUR: Number(raw.priceEUR ?? 0),
@@ -80,7 +80,9 @@ export function normalizeVehicle(raw: Record<string, any> = {}): Vehicle {
     bodyStyle: raw.bodyStyle ?? "",
     condition: raw.condition ?? "",
     features: Array.isArray(raw.features) ? raw.features : [],
-    images: Array.isArray(raw.images) ? raw.images : [],
+    createdBy: raw.createdBy ?? "",
+    stockCount: raw.stockCount ?? 1,
+    availability: raw.availability ?? true,
     featured: Boolean(raw.featured),
     isNew: Boolean(raw.isNew ?? raw.freshArrival),
     freshArrival: Boolean(raw.freshArrival ?? raw.isNew),

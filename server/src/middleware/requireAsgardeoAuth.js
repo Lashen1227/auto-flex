@@ -7,8 +7,10 @@ async function requireAsgardeoAuth(req, res, next) {
     req.auth = payload;
     return next();
   } catch (error) {
-    error.status = error.status || 401;
-    return next(error);
+    console.error("[Auth] Token verification failed:", error?.message || error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    err.status = err.status || 401;
+    return next(err);
   }
 }
 

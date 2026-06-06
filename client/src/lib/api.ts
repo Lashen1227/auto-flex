@@ -29,11 +29,11 @@ function unwrapData<T>(payload: ApiEnvelope<T> | T | null | undefined, fallbackM
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(init?.headers || {}),
+      ...(init?.headers as Record<string, string>),
     },
-    ...init,
   });
 
   if (!response.ok) {
@@ -44,7 +44,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json();
 }
 
-export async function fetchVehicles(params?: Record<string, string | number | boolean | undefined>) {
+export async function fetchVehicles(
+  params?: Record<string, string | number | boolean | undefined>,
+) {
   const search = new URLSearchParams();
 
   if (params) {
@@ -62,7 +64,9 @@ export async function fetchVehicles(params?: Record<string, string | number | bo
 
 export async function fetchVehicle(id: string) {
   const result = await request<ApiEnvelope<Vehicle> | Vehicle>(`/api/vehicles/${id}`);
-  return normalizeVehicle(unwrapData(result, "No vehicle details returned from the server") as Record<string, any>);
+  return normalizeVehicle(
+    unwrapData(result, "No vehicle details returned from the server") as Record<string, any>,
+  );
 }
 
 export async function fetchSummary() {
@@ -80,6 +84,24 @@ export async function fetchCategories() {
   return unwrapData(result, "No categories returned from the server");
 }
 
+export async function fetchMyVehicles(idToken?: string) {
+  const result = await request<ApiEnvelope<Vehicle[]> | Vehicle[]>("/api/vehicles/mine", {
+    headers: {
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+    },
+  });
+  return unwrapData(result, "No vehicle list returned from the server").map(normalizeVehicle);
+}
+
+export async function deleteVehicle(id: string, idToken?: string) {
+  await request(`/api/vehicles/${id}`, {
+    method: "DELETE",
+    headers: {
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+    },
+  });
+}
+
 export async function createVehicle(vehicle: Partial<Vehicle>, idToken?: string) {
   const result = await request<ApiEnvelope<Vehicle> | Vehicle>("/api/vehicles", {
     method: "POST",
@@ -89,14 +111,12 @@ export async function createVehicle(vehicle: Partial<Vehicle>, idToken?: string)
     body: JSON.stringify(vehicle),
   });
 
-  return normalizeVehicle(unwrapData(result, "The server did not return the created vehicle") as Record<string, any>);
+  return normalizeVehicle(
+    unwrapData(result, "The server did not return the created vehicle") as Record<string, any>,
+  );
 }
 
-export async function updateVehicle(
-  id: string,
-  vehicle: Partial<Vehicle>,
-  idToken?: string,
-) {
+export async function updateVehicle(id: string, vehicle: Partial<Vehicle>, idToken?: string) {
   const result = await request<ApiEnvelope<Vehicle> | Vehicle>(`/api/vehicles/${id}`, {
     method: "PATCH",
     headers: {
@@ -105,5 +125,7 @@ export async function updateVehicle(
     body: JSON.stringify(vehicle),
   });
 
-  return normalizeVehicle(unwrapData(result, "The server did not return the updated vehicle") as Record<string, any>);
+  return normalizeVehicle(
+    unwrapData(result, "The server did not return the updated vehicle") as Record<string, any>,
+  );
 }
