@@ -127,14 +127,13 @@ function HomePage() {
       <section className="grid gap-8 rounded-[2rem] border border-white/10 bg-[color:var(--panel)] p-8 shadow-2xl shadow-black/30 backdrop-blur md:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-6">
           <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.35em] text-white/60">
-            Germany dealership prototype
+            German dealership
           </div>
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight md:text-6xl">
             A flexible inventory platform for electric cars and cargo bikes.
           </h1>
           <p className="max-w-2xl text-base text-white/70 md:text-lg">
-            AutoFlex is built to grow. The backend can add new vehicle categories over time without
-            changing the front door of the app.
+            Browse the inventory, add new vehicles, and see live stats.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -178,7 +177,9 @@ function HomePage() {
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">Latest vehicles</h2>
-            <p className="text-sm text-white/60">Live inventory coming directly from MongoDB.</p>
+            <p className="text-sm text-white/60">
+              Check out the newest additions to our inventory.
+            </p>
           </div>
           <Link className="text-sm text-[color:var(--electric)] hover:underline" to="/vehicles">
             View all

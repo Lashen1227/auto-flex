@@ -2,8 +2,7 @@
 
 AutoFlex is a full-stack vehicle inventory platform for electric cars and cargo bikes.
 
-<img width="1613" height="908" alt="Screenshot 2026-06-06 203821" src="https://github.com/user-attachments/assets/3607dcab-e473-45ef-b157-8a812fab8d33" />
-
+<img width="1423" height="858" alt="Screenshot 2026-06-09 150838" src="https://github.com/user-attachments/assets/7fbeb0ee-21e3-4687-a2e1-fb66eb098393" />
 
 The project is split into two apps:
 
