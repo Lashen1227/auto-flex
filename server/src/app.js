@@ -7,6 +7,14 @@ const vehicleRoutes = require("./routes/vehicleRoutes");
 const userRoutes = require("./routes/userRoutes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 
+function getCorsOrigins() {
+  const raw = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function isAllowedDevOrigin(origin) {
   try {
     const parsed = new URL(origin);
@@ -22,7 +30,7 @@ function isAllowedDevOrigin(origin) {
 function createApp() {
   const app = express();
 
-  const allowedOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  const allowedOrigins = getCorsOrigins();
   const isProduction = process.env.NODE_ENV === "production";
 
   const corsOptions = {
@@ -31,7 +39,7 @@ function createApp() {
         return callback(null, true);
       }
 
-      if (origin === allowedOrigin) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
