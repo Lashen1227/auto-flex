@@ -27,6 +27,15 @@ function isAllowedDevOrigin(origin) {
   }
 }
 
+function isRenderOrigin(origin) {
+  try {
+    const parsed = new URL(origin);
+    return parsed.hostname.endsWith(".onrender.com");
+  } catch (_error) {
+    return false;
+  }
+}
+
 function createApp() {
   const app = express();
 
@@ -43,11 +52,16 @@ function createApp() {
         return callback(null, true);
       }
 
+      if (isRenderOrigin(origin)) {
+        return callback(null, true);
+      }
+
       if (!isProduction && isAllowedDevOrigin(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error(`Not allowed by CORS: ${origin}`));
+      console.warn(`[CORS] Denied origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
