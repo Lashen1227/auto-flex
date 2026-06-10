@@ -130,8 +130,11 @@ function HomePage() {
             German dealership
           </div>
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight md:text-6xl">
-            A inventory platform for electric cars & cargo bikes.
+            A flexible inventory platform for electric cars and cargo bikes.
           </h1>
+          <p className="max-w-2xl text-base text-white/70 md:text-lg">
+            Browse the inventory, add new vehicles and see live stats.
+          </p>
           <div className="flex flex-wrap gap-3">
             <Button
               asChild
