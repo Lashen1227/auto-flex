@@ -130,11 +130,8 @@ function HomePage() {
             German dealership
           </div>
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight md:text-6xl">
-            A flexible inventory platform for electric cars and cargo bikes.
+            A inventory platform for electric cars & cargo bikes.
           </h1>
-          <p className="max-w-2xl text-base text-white/70 md:text-lg">
-            Browse the inventory, add new vehicles, and see live stats.
-          </p>
           <div className="flex flex-wrap gap-3">
             <Button
               asChild
@@ -188,8 +185,7 @@ function HomePage() {
 
         {vehicles.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-sm text-white/60">
-            No vehicles are stored in MongoDB yet. Add one from the admin page to populate the cards
-            here.
+            No vehicles in inventory yet.
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
